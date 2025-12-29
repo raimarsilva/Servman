@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Servman
+Comment=Gerenciador de Serviços do Linux
+Exec=pkexec /home/raimar/workspace/C23/Servman/app/Servman
+#icon=
+Terminal=true
+Type=Application
+Categories=System;Utility;
