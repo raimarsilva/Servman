@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
-
+#include "listing.h"
 
 void listServices(void){
     sd_bus *bus = NULL;
@@ -81,17 +81,10 @@ void listServices(void){
         sd_bus_message_exit_container(reply);
     }
 
-finish:
-    sd_bus_error_free(&error);
-    sd_bus_message_unref(reply);
-    sd_bus_unref(bus);
+    finish:
+        sd_bus_error_free(&error);
+        sd_bus_message_unref(reply);
+        sd_bus_unref(bus);
 
     //return reply;
-}
-
-int main(){
-    //system("systemctl status rabbitmq-server.service");
-    listServices();
-    //printf("%s\n", services);
-    return 0;
 }
