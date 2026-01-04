@@ -4,12 +4,21 @@
 #include <string.h>
 #include <errno.h>
 #include "listing.h"
+#include "service.h"
 
-void listServices(void){
+struct Service *listServices(){
+    struct Service *services = (struct Service*)malloc(100 * sizeof(struct Service));
+    int count = 0;
     sd_bus *bus = NULL;
     sd_bus_message *reply = NULL;
     sd_bus_error error = SD_BUS_ERROR_NULL;
     int r;
+
+    // Check for malloc Failure
+    if (services == NULL) {
+        fprintf(stderr, "Memory allocation failed\n");
+        goto finish;
+    }
 
     // conecta ao system bus:
     r = sd_bus_open_system(&bus);
@@ -45,7 +54,7 @@ void listServices(void){
         goto finish;
     }
 
-    while ((r = sd_bus_message_enter_container(reply, SD_BUS_TYPE_STRUCT, "ssssssouso")) > 0) {
+    while((r = sd_bus_message_enter_container(reply, SD_BUS_TYPE_STRUCT, "ssssssouso")) > 0) {
         const char *name;
         const char *description;
         const char *load_state;
@@ -74,10 +83,14 @@ void listServices(void){
 
         // Mostra apenas serviços
         if (strstr(name, ".service")) {
-            printf("%-75s %-10s %-10s\n",
-                name, load_state, active_state);
+            //printf("%-75s %-10s %-10s\n", name, description, job_id, load_state, active_state);
+            services[count].name = strdup(name);
+            services[count].description = strdup(description);
+            services[count].load_state = strdup(load_state);
+            services[count].active_state = strdup(active_state);
+            services[count].job_id = job_id;
+            count++;
         }
-
         sd_bus_message_exit_container(reply);
     }
 
@@ -86,5 +99,5 @@ void listServices(void){
         sd_bus_message_unref(reply);
         sd_bus_unref(bus);
 
-    //return reply;
+    return services;
 }
