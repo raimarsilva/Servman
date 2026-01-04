@@ -1,3 +1,5 @@
+#define _POSIX_C_SOURCE 200809L
+
 #include <stdlib.h>
 #include <systemd/sd-bus.h>
 #include <stdio.h>
@@ -5,14 +7,26 @@
 #include <errno.h>
 #include "listing.h"
 #include "service.h"
+#include "serviceList.h"
 
-struct Service *listServices(){
-    struct Service *services = (struct Service*)malloc(100 * sizeof(struct Service));
+void freeServices(Service *services, int count){
+    for(int i = 0; i < count; i++){
+        free(services[i].name);
+        free(services[i].description);
+        free(services[i].load_state);
+        free(services[i].active_state);
+    }
+    free(services);
+}
+
+ServiceList listServices(void){
+    Service *services = (Service*)malloc(100 * sizeof(Service));
     int count = 0;
     sd_bus *bus = NULL;
     sd_bus_message *reply = NULL;
     sd_bus_error error = SD_BUS_ERROR_NULL;
     int r;
+    ServiceList serviceList = {0};
 
     // Check for malloc Failure
     if (services == NULL) {
@@ -91,13 +105,17 @@ struct Service *listServices(){
             services[count].job_id = job_id;
             count++;
         }
+
         sd_bus_message_exit_container(reply);
     }
+    serviceList.items = services;
+    serviceList.count = count;
+    serviceList.capacity = 100;
 
     finish:
         sd_bus_error_free(&error);
         sd_bus_message_unref(reply);
         sd_bus_unref(bus);
 
-    return services;
+    return serviceList;
 }

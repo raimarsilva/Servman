@@ -1,10 +1,13 @@
 #ifndef SERVICE_H
 #define SERVICE_H
+
+#include <stdint.h>
+
 typedef struct Service{
-    char name[256];
-    char description[256];
-    char load_state[32];
-    char active_state[32];
-    char job_id[16];
-};
+    char *name;
+    char *description;
+    char *load_state;
+    char *active_state;
+    uint32_t job_id;
+} Service;
 #endif

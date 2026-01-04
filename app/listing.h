@@ -1,5 +1,10 @@
 #ifndef LISTING_H
 #define LISTING_H
-void listServices(void);
+
+#include "service.h"
+#include "serviceList.h"
+
+ServiceList listServices(void);
+void freeServices(Service *services, int count);
 #endif
 
