@@ -20,12 +20,20 @@ void freeServices(Service *services, int count){
 }
 
 ServiceList listServices(void){
-    Service *services = (Service*)malloc(100 * sizeof(Service));
+    int capacity = 100;
     int count = 0;
     sd_bus *bus = NULL;
     sd_bus_message *reply = NULL;
     sd_bus_error error = SD_BUS_ERROR_NULL;
     int r;
+
+    // possivel refactoring para outro arquivo.
+    Service *services = malloc(capacity * sizeof(Service));
+    if(!services){
+        perror("memory alocation error");
+        exit(EXIT_FAILURE);
+    }
+
     ServiceList serviceList = {0};
 
     // Check for malloc Failure
@@ -98,6 +106,17 @@ ServiceList listServices(void){
         // Mostra apenas serviços
         if (strstr(name, ".service")) {
             //printf("%-75s %-10s %-10s\n", name, description, job_id, load_state, active_state);
+
+            if(count == capacity){
+                capacity *= 2;
+                Service *temp = realloc(services, capacity * sizeof(Service));
+                if(!temp){
+                    perror("memory reallocation error");
+                    goto finish;
+                }
+                services = temp;
+            }
+
             services[count].name = strdup(name);
             services[count].description = strdup(description);
             services[count].load_state = strdup(load_state);
@@ -110,12 +129,19 @@ ServiceList listServices(void){
     }
     serviceList.items = services;
     serviceList.count = count;
-    serviceList.capacity = 100;
+    serviceList.capacity = capacity;
 
     finish:
         sd_bus_error_free(&error);
         sd_bus_message_unref(reply);
         sd_bus_unref(bus);
+
+        if(r < 0 && services){
+            freeServices(services, count);
+            serviceList.items = NULL;
+            serviceList.count = 0;
+            serviceList.capacity = 0;
+        }
 
     return serviceList;
 }

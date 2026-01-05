@@ -5,8 +5,8 @@
 int main(int argc, char *argv[]){
     //system("systemctl status rabbitmq-server.service");
     ServiceList serviceList = listServices();
-    freeServices(serviceList.items, serviceList.count);
     init_gui(argc, argv);
+    freeServices(serviceList.items, serviceList.count);
 
     return 0;
 }
