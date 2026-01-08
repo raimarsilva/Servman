@@ -3,11 +3,11 @@
 
 #include <stdint.h>
 
-typedef struct Service{
+typedef struct {
     char *name;
     char *description;
     char *load_state;
     char *active_state;
-    uint32_t job_id;
-} Service;
+}Service;
+
 #endif

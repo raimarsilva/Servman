@@ -36,12 +36,6 @@ ServiceList listServices(void){
 
     ServiceList serviceList = {0};
 
-    // Check for malloc Failure
-    if (services == NULL) {
-        fprintf(stderr, "Memory allocation failed\n");
-        goto finish;
-    }
-
     // conecta ao system bus:
     r = sd_bus_open_system(&bus);
     if(r<0){
@@ -105,7 +99,7 @@ ServiceList listServices(void){
 
         // Mostra apenas serviços
         if (strstr(name, ".service")) {
-            //printf("%-75s %-10s %-10s\n", name, description, job_id, load_state, active_state);
+            //printf("%-75s %-10s %-10s %-10s\n", name, description, load_state, active_state);
 
             if(count == capacity){
                 capacity *= 2;
@@ -121,7 +115,6 @@ ServiceList listServices(void){
             services[count].description = strdup(description);
             services[count].load_state = strdup(load_state);
             services[count].active_state = strdup(active_state);
-            services[count].job_id = job_id;
             count++;
         }
 

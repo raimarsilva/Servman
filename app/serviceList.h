@@ -3,7 +3,7 @@
 
 #include "service.h"
 
-typedef struct ServiceList{
+typedef struct {
     Service *items;
     int count;
     int capacity;

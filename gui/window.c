@@ -1,74 +1,85 @@
 #include "window.h"
 #include <gtk/gtk.h>
 
-void init_gui(int argc, char *argv[], ServiceList *serviceList){
-    gtk_init(&argc, &argv);
+enum {
+    COL_NAME,
+    COL_DESCRIPTION,
+    COL_LOAD_STATE,
+    COL_ACTIVE_STATE,
+    COL_QTD = 4 // column quantity
+};
 
-    GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-    gtk_window_set_title(GTK_WINDOW(window), "Service Manager");
-    gtk_window_set_default_size(GTK_WINDOW(window), 400, 300);
+GtkWidget *window;
+GtkWidget *treeview;
+GtkWidget *scrollable;
+const char *col_labels[] = {"Name", "Description", "Load State", "Active State"};
+/* -- Helper functions -- */
 
-    GtkListStore *store;
-    GtkTreeIter iter;
+void set_column_behavior(GtkTreeViewColumn *column){
+    gtk_tree_view_column_set_resizable(column, TRUE);
+    gtk_tree_view_column_set_expand(column, TRUE);
+    gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+}
 
-    /*store = gtk_list_store_new(1,G_TYPE_STRING);
-    gtk_list_store_append(store,&iter);
-    gtk_list_store_set(store, &iter, "ITEM", "Raimar", -1);*/
+void renderColumns(void){
+    GtkCellRenderer *renderer;
+    GtkTreeViewColumn *column;
+
+    for(int i=0; i<COL_QTD; i++){
+        renderer = gtk_cell_renderer_text_new();
+        column = gtk_tree_view_column_new_with_attributes(col_labels[i], renderer, "text", i, NULL);
+        set_column_behavior(column);
+    }
+}
+
+GtkListStore *createStore(){
     
-    // Populate the list store with service data
-    store = gtk_list_store_new(5,
+    return gtk_list_store_new(COL_QTD,
         G_TYPE_STRING, // Name
         G_TYPE_STRING, // Description
         G_TYPE_STRING, // Load State
-        G_TYPE_STRING, // Active State
-        G_TYPE_UINT    // Job ID
+        G_TYPE_STRING // Active State
     );
+}
 
+GtkListStore *fillServiceStore(ServiceList *serviceList){
+    GtkListStore *store = createStore();
+    GtkTreeIter iter;
+    // Populate the list store with service data
     for(int i = 0; i < serviceList->count; i++){
         gtk_list_store_append(store, &iter);
         gtk_list_store_set(store, &iter,
-            0, serviceList->items[i].name,
-            1, serviceList->items[i].description,
-            2, serviceList->items[i].load_state,
-            3, serviceList->items[i].active_state,
-            4, serviceList->items[i].job_id,
+            COL_NAME,           serviceList->items[i].name,
+            COL_DESCRIPTION,    serviceList->items[i].description,
+            COL_LOAD_STATE,     serviceList->items[i].load_state,
+            COL_ACTIVE_STATE,   serviceList->items[i].active_state,
             -1
         );
     }
 
-    GtkWidget *treeview = gtk_tree_view_new_with_model(GTK_TREE_MODEL(store));
+    return store;
+}
 
-    GtkCellRenderer *renderer;
-    GtkTreeViewColumn *column;
+/* -- GUI Bootstrap -- */
 
-    //renderer para a coluna NAME
-    renderer = gtk_cell_renderer_text_new();
-    column = gtk_tree_view_column_new_with_attributes("Name", renderer, "text", 0, NULL);
-    gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
-
-    //description
-    renderer = gtk_cell_renderer_text_new();
-    column = gtk_tree_view_column_new_with_attributes("Description", renderer, "text", 1, NULL);
-    gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
-
-    //load_state
-    renderer = gtk_cell_renderer_text_new();
-    column = gtk_tree_view_column_new_with_attributes("Load", renderer, "text", 2, NULL);
-    gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
-
-    //active state
-    renderer = gtk_cell_renderer_text_new();
-    column = gtk_tree_view_column_new_with_attributes("Active", renderer, "text", 3, NULL);
-    gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
-
-    //job id
-    renderer = gtk_cell_renderer_text_new();
-    column = gtk_tree_view_column_new_with_attributes("Job ID", renderer, "text", 4, NULL);
-    gtk_tree_view_append_column(GTK_TREE_VIEW(treeview), column);
+void init_gui(int argc, char *argv[], ServiceList *serviceList){
+    gtk_init(&argc, &argv);
+    window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+    gtk_window_set_title(GTK_WINDOW(window), "Gerenciador de Serviços by Raimar ^.^v");
+    gtk_window_set_default_size(GTK_WINDOW(window), 760, 570);
+    
+    scrollable = gtk_scrolled_window_new(NULL, NULL);
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrollable), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+    
+    GtkListStore *store = fillServiceStore(serviceList);
+    treeview = gtk_tree_view_new_with_model(GTK_TREE_MODEL(store));
 
     g_object_unref(store);
 
-    gtk_container_add(GTK_CONTAINER(window), treeview);
+    renderColumns();
+
+    gtk_container_add(GTK_CONTAINER(scrollable), treeview);
+    gtk_container_add(GTK_CONTAINER(window), scrollable);
 
     g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
