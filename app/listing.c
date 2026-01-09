@@ -9,6 +9,7 @@
 #include "service.h"
 #include "serviceList.h"
 
+
 void freeServices(Service *services, int count){
     for(int i = 0; i < count; i++){
         free(services[i].name);
@@ -17,6 +18,25 @@ void freeServices(Service *services, int count){
         free(services[i].active_state);
     }
     free(services);
+}
+
+// conecta ao system bus.
+int sdbusConnect(sd_bus **bus){
+    return sd_bus_open_system(bus);
+}
+
+// chama um metodo do sdbus pelo seu nome.
+int callSdbusMethod(sd_bus *bus, char methodName[], sd_bus_error *error, sd_bus_message **reply){
+    return sd_bus_call_method(
+        bus,
+        "org.freedesktop.systemd1",         //servico
+        "/org/freedesktop/systemd1",        //bin path
+        "org.freedesktop.systemd1.Manager", //interface
+        methodName,                        //metodo
+        error,
+        reply,
+        NULL
+    );
 }
 
 ServiceList listServices(void){
@@ -34,26 +54,14 @@ ServiceList listServices(void){
         exit(EXIT_FAILURE);
     }
 
-    ServiceList serviceList = {0};
-
-    // conecta ao system bus:
-    r = sd_bus_open_system(&bus);
+    r = sdbusConnect(&bus);
     if(r<0){
-        fprintf(stderr, "erro ao conectar: %s\n", strerror(-r));
+        fprintf(stderr, "erro ao conectar no barramento do systemd: %s\n", strerror(-r));
         goto finish;
     }
-
+    
     // chama o metodo ListUnits do dbus:
-    r = sd_bus_call_method(
-        bus,
-        "org.freedesktop.systemd1",         //servico
-        "/org/freedesktop/systemd1",        //bin path
-        "org.freedesktop.systemd1.Manager", //interface
-        "ListUnits",                        //metodo
-        &error,
-        &reply,
-        NULL
-    );
+    r = callSdbusMethod(bus, "ListUnits", &error, &reply);
     if(r<0){
         fprintf(stderr, "erro ao conectar: %s\n", strerror(-r));
         goto finish;
@@ -120,6 +128,8 @@ ServiceList listServices(void){
 
         sd_bus_message_exit_container(reply);
     }
+
+    ServiceList serviceList = {0};
     serviceList.items = services;
     serviceList.count = count;
     serviceList.capacity = capacity;
